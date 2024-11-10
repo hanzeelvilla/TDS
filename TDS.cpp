@@ -5,6 +5,4 @@ void TDS::info() {
   Serial.println(pin);
   Serial.print("Volts: ");
   Serial.println(volts);
-  Serial.print("Samples: ");
-  Serial.println(samples);
 }

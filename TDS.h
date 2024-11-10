@@ -1,21 +1,28 @@
 #ifndef TDS_H
 #define TDS_H
 
-#include "Arduino.h"
+#define SAMPLES 30
+
+#include <Arduino.h>
+
 
 class TDS {
+  // constructor variables
   int pin;
   float volts;
-  int samples;
+  // reading variables
+  int analogBuffer[SAMPLES];     
+  int analogBufferTemp[SAMPLES];
+  int analogBufferIndex = 0;
+  int copyIndex = 0;
 
   public:
-    TDS(int pinTDS, float voltsTDS = 5.5, int samplesTDS = 30) {
+    TDS(int pinTDS, float voltsTDS = 5.5) {
       pin = pinTDS;
       volts = voltsTDS;
-      samples = samplesTDS;
     }
 
     void info();
-}
+};
 
-#endif TDS_H
+#endif
