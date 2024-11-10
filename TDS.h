@@ -21,7 +21,7 @@ class TDS {
   int getMedianNum(int bArray[], int iFilterLen);
 
   public:
-    TDS(int pinTDS, float voltsTDS = 5.5) {
+    TDS(int pinTDS, float voltsTDS = 5) {
       pin = pinTDS;
       volts = voltsTDS;
     }

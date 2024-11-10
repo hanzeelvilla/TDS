@@ -1,4 +1,4 @@
-#include "TDS.h"
+#include <TDS.h>
 
 TDS tds(27, 3.3);
 
@@ -9,7 +9,7 @@ void setup() {
 }
 
 void loop() {
-  TDSData tds_data = tds.read(25);
+  TDSData tds_data = tds.read(20); // you can pass the temperature from a sensor
 
   Serial.print("TDS averageVoltage: ");
   Serial.print(tds_data.averageVoltage);
