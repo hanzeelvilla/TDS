@@ -3,20 +3,20 @@
 
 #define SAMPLES 30
 #define SAMPLES_DELAY 40U
+#define LATEST_SAMPLES_DELAY 800U
 
 #include <Arduino.h>
 
+struct TDSData {
+  float averageVoltage;
+  float compensationCoefficient;
+  float compensationVoltage;
+  int ppm;
+};
+
 class TDS {
-  // constructor variables
   int pin;
   float volts;
-  // reading variables
-  int analogBuffer[SAMPLES];     
-  int analogBufferTemp[SAMPLES];
-  int analogBufferIndex = 0;
-  int copyIndex = 0;
-
-  float averageVoltage = 0;
 
   int getMedianNum(int bArray[], int iFilterLen);
 
@@ -28,7 +28,7 @@ class TDS {
 
     void init();
     void info();
-    int read(float temperature = 25);
+    TDSData read(float temperature = 25);
 };
 
 #endif

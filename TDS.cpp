@@ -1,18 +1,27 @@
+#include <cmath>
 #include "TDS.h"
 
 void TDS::init() {
   pinMode(pin, INPUT);
+  Serial.println("TDS initialized");
 }
 
 void TDS::info() {
   Serial.print("Pin: ");
   Serial.println(pin);
   Serial.print("Volts: ");
-  Serial.println(volts);
+  Serial.print(volts);
+  Serial.println(" V");
 }
 
-int TDS::read(float temperature) {
+TDSData TDS::read(float temperature) {
   static unsigned long analogSampleTimepoint = millis();
+  static unsigned long printTimepoint = millis();
+
+  static int analogBuffer[SAMPLES];     
+  static int analogBufferTemp[SAMPLES];
+  static int analogBufferIndex = 0;
+  static float averageVoltage = 0;
 
   if (millis() - analogSampleTimepoint > SAMPLES_DELAY){     
     analogSampleTimepoint = millis();
@@ -24,26 +33,32 @@ int TDS::read(float temperature) {
     }
   }
   
-  static unsigned long printTimepoint = millis();
-
-  if (millis() - printTimepoint > 800U){
+  if (millis() - printTimepoint > LATEST_SAMPLES_DELAY){
     printTimepoint = millis();
 
-    for (copyIndex = 0; copyIndex < SAMPLES; copyIndex++){
-      analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
-      
-      // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-      averageVoltage = getMedianNum(analogBufferTemp, SAMPLES) * (float)volts / 4096.0;
-      
-      // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0)); 
-      float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
-
-      // temperature compensation
-      float compensationVoltage = averageVoltage / compensationCoefficient;
-
-      // return convert voltage value to tds valu
-      return ((133.42 * compensationVoltage * compensationVoltage * compensationVoltage - 255.86 * compensationVoltage * compensationVoltage + 857.39 * compensationVoltage) * 0.5);
+    for (int i = 0; i < SAMPLES; i++){
+      analogBufferTemp[i] = analogBuffer[i];
     }
+
+    // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+    averageVoltage = getMedianNum(analogBufferTemp, SAMPLES) * volts / 4096.0;
+      
+    // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0)); 
+    float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
+
+    // temperature compensation
+    float compensationVoltage = averageVoltage / compensationCoefficient;
+
+    // return convert voltage value to tds value
+    int ppm = ((133.42 * std::pow(compensationVoltage, 3) - 255.86 * std::pow(compensationVoltage, 2) + 857.39 * compensationVoltage) * 0.5);
+
+    TDSData tds;
+    tds.averageVoltage = averageVoltage;
+    tds.compensationCoefficient = compensationCoefficient;
+    tds.compensationVoltage = compensationVoltage;
+    tds.ppm = ppm;
+
+    return tds;
   }   
 }
 
@@ -54,22 +69,20 @@ int TDS::getMedianNum(int bArray[], int iFilterLen) {
   for (byte i = 0; i < iFilterLen; i++)
     bTab[i] = bArray[i];
 
-  int i, j, bTemp;
+  int bTemp;
 
-  for (j = 0; j < iFilterLen - 1; j++) {
-    for (i = 0; i < iFilterLen - j - 1; i++) {
-      if (bTab[i] > bTab[i + 1]) {
-        bTemp = bTab[i];
-        bTab[i] = bTab[i + 1];
-        bTab[i + 1] = bTemp;
+  for (int i = 0; i < iFilterLen - 1; i++) {
+    for (int j = 0; j < iFilterLen - i - 1; j++) {
+      if (bTab[j] > bTab[j + 1]) {
+        bTemp = bTab[j];
+        bTab[j] = bTab[j + 1];
+        bTab[j + 1] = bTemp;
       }
     }
   }
 
   if ((iFilterLen & 1) > 0)
-    bTemp = bTab[(iFilterLen - 1) / 2];
+    return bTab[(iFilterLen - 1) / 2];
   else
-    bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
-
-  return bTemp;
+    return (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
 }

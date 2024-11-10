@@ -4,12 +4,27 @@ TDS tds(27, 3.3);
 
 void setup() {
   Serial.begin(115200);
+  tds.init();
   tds.info();
 }
 
 void loop() {
-  int tdsValue = tds.read();
-  Serial.print("TDS Value:");
-  Serial.print(tdsValue);
+  TDSData tds_data = tds.read(25);
+
+  Serial.print("TDS averageVoltage: ");
+  Serial.print(tds_data.averageVoltage);
+  Serial.println(" V");
+
+  Serial.print("TDS compensationCoefficient: ");
+  Serial.println(tds_data.compensationCoefficient);
+
+  Serial.print("TDS compensationVoltage: ");
+  Serial.print(tds_data.compensationVoltage);
+  Serial.println(" V");
+
+  Serial.print("TDS Value: ");
+  Serial.print(tds_data.ppm);
   Serial.println("ppm");
+
+  delay(200);
 }
